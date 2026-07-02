@@ -1,0 +1,18 @@
+# generated / vendored
+node_modules
+.next
+out
+build
+coverage
+package-lock.json
+
+# prisma (schema is formatted by `prisma format`; migrations are SQL; *.db is binary)
+prisma/migrations
+prisma/*.db
+*.prisma
+
+# next
+next-env.d.ts
+
+# reports (preserve exact formatting)
+bench-reports

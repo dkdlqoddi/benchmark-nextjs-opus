@@ -1,0 +1,37 @@
+// Prisma schema for HabitLog.
+// Docs: https://pris.ly/d/prisma-schema
+//
+// Note: SQLite does not enforce string length limits. The data-model
+// constraints (Habit.name 1-50 chars, Habit.description <= 200 chars, and
+// color as a #RRGGBB hex string) are enforced in the Server Actions layer
+// (see actions/habits.ts).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Habit {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  color       String
+  createdAt   DateTime  @default(now())
+  archivedAt  DateTime?
+  checkIns    CheckIn[]
+}
+
+model CheckIn {
+  id        String   @id @default(cuid())
+  habitId   String
+  habit     Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  date      String   // stored as YYYY-MM-DD
+  createdAt DateTime @default(now())
+
+  // A habit can only be checked in once per day.
+  @@unique([habitId, date])
+}
