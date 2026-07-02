@@ -64,6 +64,41 @@ describe("getTodayKey / currentMonth (clock-dependent)", () => {
   });
 });
 
+// Regression (p14): a user reported that an 11:55 PM check-in was recorded under
+// the next day's date. Check-in dates come from getTodayKey() (Asia/Seoul), so
+// these pin the intended midnight-boundary behaviour: a check-in is dated to the
+// *Seoul* calendar day of the instant it happens. A viewer in Seoul keeps a
+// late-night check-in on the same day; a viewer west of Seoul can see it land on
+// the next Seoul day — by design (single fixed zone), not a bug.
+describe("regression: midnight-boundary check-in date (p14)", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("keeps an 11:55 PM check-in on the same day for a viewer in Seoul", () => {
+    // 23:55 KST on 2026-07-02 is 14:55 UTC — before Seoul midnight (15:00 UTC).
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-02T14:55:00Z"));
+    expect(getTodayKey()).toBe("2026-07-02");
+  });
+
+  it("dates an 11:55 PM check-in to the next Seoul day west of Seoul", () => {
+    // 23:55 in a UTC+0 zone is 23:55 UTC — already 08:55 next day in Seoul.
+    // This reproduces the report: the check-in is stored under 2026-07-03.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-02T23:55:00Z"));
+    expect(getTodayKey()).toBe("2026-07-03");
+  });
+
+  it("switches day exactly at Seoul midnight (15:00 UTC), to the tick", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-02T14:59:59Z"));
+    expect(getTodayKey()).toBe("2026-07-02");
+    vi.setSystemTime(new Date("2026-07-02T15:00:00Z"));
+    expect(getTodayKey()).toBe("2026-07-03");
+  });
+});
+
 describe("dateKey formatting", () => {
   it("zero-pads month and day", () => {
     expect(dateKey(2026, 1, 5)).toBe("2026-01-05");

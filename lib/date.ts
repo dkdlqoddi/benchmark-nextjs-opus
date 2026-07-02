@@ -35,7 +35,14 @@ export function toDateKey(instant: Date): string {
   return dateKey(year, month, day);
 }
 
-/** Today's date key (YYYY-MM-DD) in Asia/Seoul. */
+/**
+ * Today's date key (YYYY-MM-DD) in Asia/Seoul — the calendar day a check-in
+ * "for today" is dated to. This is anchored to a single fixed zone on purpose
+ * (independent of server or viewer location), so between Seoul midnight
+ * (15:00 UTC) and a viewer's own midnight, a check-in is dated to the Seoul day.
+ * For a viewer west of Seoul that can look like "tomorrow" — intended, not a
+ * bug. See the midnight-boundary regression tests in tests/unit/date.test.ts.
+ */
 export function getTodayKey(): string {
   return toDateKey(new Date());
 }
