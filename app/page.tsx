@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { HabitCard } from "@/components/features/HabitCard";
+import { getTodayKey } from "@/lib/date";
 
 // Read live database state on every request instead of prerendering at build time.
 export const dynamic = "force-dynamic";
@@ -11,6 +12,13 @@ export default async function HomePage() {
     where: { archivedAt: null },
     orderBy: { createdAt: "asc" },
   });
+
+  const todayKey = getTodayKey();
+  const todaysCheckIns = await prisma.checkIn.findMany({
+    where: { date: todayKey, habitId: { in: habits.map((h) => h.id) } },
+    select: { habitId: true },
+  });
+  const checkedToday = new Set(todaysCheckIns.map((c) => c.habitId));
 
   return (
     <section>
@@ -52,7 +60,10 @@ export default async function HomePage() {
         <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {habits.map((habit) => (
             <li key={habit.id}>
-              <HabitCard habit={habit} />
+              <HabitCard
+                habit={habit}
+                checkedToday={checkedToday.has(habit.id)}
+              />
             </li>
           ))}
         </ul>

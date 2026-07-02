@@ -1,18 +1,7 @@
 import { PrismaClient } from "@prisma/client";
+import { getTodayKey, shiftKey } from "../lib/date";
 
 const prisma = new PrismaClient();
-
-/** Returns a Date shifted back by `daysAgo` days from now (UTC). */
-function daysAgoDate(daysAgo: number): Date {
-  const date = new Date();
-  date.setUTCDate(date.getUTCDate() - daysAgo);
-  return date;
-}
-
-/** Formats a Date as a YYYY-MM-DD string to match CheckIn.date. */
-function toDateKey(date: Date): string {
-  return date.toISOString().slice(0, 10);
-}
 
 const SEED_HABITS = [
   {
@@ -32,12 +21,13 @@ const SEED_HABITS = [
   },
 ];
 
-/** Seeds three habits, each with random check-ins across the last 14 days. */
+/** Seeds three habits, each with random check-ins across the last 14 days (Asia/Seoul). */
 async function main() {
   // Make the seed idempotent.
   await prisma.checkIn.deleteMany();
   await prisma.habit.deleteMany();
 
+  const today = getTodayKey();
   for (const data of SEED_HABITS) {
     const habit = await prisma.habit.create({ data });
 
@@ -45,7 +35,7 @@ async function main() {
       // ~55% chance of a check-in on each of the last 14 days.
       if (Math.random() < 0.55) {
         await prisma.checkIn.create({
-          data: { habitId: habit.id, date: toDateKey(daysAgoDate(daysAgo)) },
+          data: { habitId: habit.id, date: shiftKey(today, -daysAgo) },
         });
       }
     }
