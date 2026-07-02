@@ -64,3 +64,35 @@ export function computeStats(dates: string[], today: string): HabitStats {
     total: dates.length,
   };
 }
+
+export type WeekRate = {
+  start: string; // YYYY-MM-DD (inclusive)
+  end: string; // YYYY-MM-DD (inclusive)
+  checkIns: number;
+  possible: number;
+  rate: number; // 0..100, rounded
+};
+
+/**
+ * Weekly completion rates over the last `weeks` 7-day windows ending on `today`.
+ * Each window's rate = check-ins in the window / (habitCount * 7) as a rounded
+ * percentage. `dates` is every habit's check-in keys (duplicate dates across
+ * different habits are expected and counted). Returned oldest-first. Pure.
+ */
+export function weeklyCompletionRates(
+  dates: string[],
+  today: string,
+  habitCount: number,
+  weeks = 8,
+): WeekRate[] {
+  const result: WeekRate[] = [];
+  for (let w = weeks - 1; w >= 0; w--) {
+    const end = shiftKey(today, -7 * w);
+    const start = shiftKey(end, -6);
+    const checkIns = dates.filter((d) => d >= start && d <= end).length;
+    const possible = habitCount * 7;
+    const rate = possible > 0 ? Math.round((checkIns / possible) * 100) : 0;
+    result.push({ start, end, checkIns, possible, rate });
+  }
+  return result;
+}
