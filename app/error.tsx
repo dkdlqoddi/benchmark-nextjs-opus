@@ -30,7 +30,9 @@ export default function Error({
       <p className="text-5xl font-bold tracking-tight text-neutral-300 dark:text-neutral-700">
         !
       </p>
-      <h1 className="text-2xl font-bold tracking-tight">Something went wrong</h1>
+      <h1 className="text-2xl font-bold tracking-tight">
+        Something went wrong
+      </h1>
       <p className="text-sm text-neutral-600 dark:text-neutral-400">
         An unexpected error occurred. You can try again, or head back home.
       </p>

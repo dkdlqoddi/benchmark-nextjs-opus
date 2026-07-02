@@ -181,8 +181,7 @@ export default async function HomePage({
       {habits.length === 0 ? (
         q ? (
           <p className="rounded-lg border border-dashed border-neutral-300 p-6 text-center text-neutral-600 dark:border-neutral-700 dark:text-neutral-400">
-            No habits match “{q}”
-            {activeTag ? ` in “${activeTag}”` : ""}.{" "}
+            No habits match “{q}”{activeTag ? ` in “${activeTag}”` : ""}.{" "}
             <Link
               href={homeHref({ tag: activeTag })}
               className="font-medium text-blue-600 hover:underline dark:text-blue-400"

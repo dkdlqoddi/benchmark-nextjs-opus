@@ -9,18 +9,18 @@ were in scope to fix) or **documented** for follow-up.
 
 ## Summary
 
-| ID | Area | Severity | Status |
-|----|------|----------|--------|
-| H1 | Accessibility — color contrast | **High** | ✅ Fixed |
-| H2 | Data integrity — check-in race | **High** | ✅ Fixed |
-| M1 | Security — no auth rate limiting | Medium | Documented |
-| M2 | Security — account enumeration | Medium | Documented |
-| M3 | Data integrity — other P2002 races | Medium | Documented |
-| L1 | Data integrity — weak date validation | Low | ✅ Fixed (adjacent to H2) |
-| L2 | Performance — minor over-fetching | Low | Documented |
-| L3 | Data integrity — orphaned tags | Low | Documented |
-| L4 | Security — committed AUTH_SECRET | Low | Documented (intentional) |
-| L5 | Accessibility — picker grouping semantics | Low | Documented |
+| ID  | Area                                      | Severity | Status                    |
+| --- | ----------------------------------------- | -------- | ------------------------- |
+| H1  | Accessibility — color contrast            | **High** | ✅ Fixed                  |
+| H2  | Data integrity — check-in race            | **High** | ✅ Fixed                  |
+| M1  | Security — no auth rate limiting          | Medium   | Documented                |
+| M2  | Security — account enumeration            | Medium   | Documented                |
+| M3  | Data integrity — other P2002 races        | Medium   | Documented                |
+| L1  | Data integrity — weak date validation     | Low      | ✅ Fixed (adjacent to H2) |
+| L2  | Performance — minor over-fetching         | Low      | Documented                |
+| L3  | Data integrity — orphaned tags            | Low      | Documented                |
+| L4  | Security — committed AUTH_SECRET          | Low      | Documented (intentional)  |
+| L5  | Accessibility — picker grouping semantics | Low      | Documented                |
 
 **No Critical issues were found.** The app has genuinely solid foundations
 (see _What's already done well_ at the end); the two High issues are a
@@ -183,16 +183,16 @@ The checked-in button (`HabitCard`) and checked calendar day (`CalendarMonth`)
 rendered **`text-white` on the habit's own color**. Measured WCAG contrast of
 white on the 8 presets:
 
-| Preset | White-on-color | AA (4.5:1)? |
-|--------|----------------|-------------|
-| `#eab308` yellow | ~1.6:1 | ✗ (severe) |
-| `#22c55e` green | ~2.0:1 | ✗ (severe) |
-| `#14b8a6` teal | ~2.3:1 | ✗ |
-| `#f97316` orange | ~2.3:1 | ✗ |
-| `#ec4899` pink | ~3.0:1 | ✗ |
-| `#3b82f6` blue | ~3.3:1 | ✗ |
-| `#ef4444` red | ~3.4:1 | ✗ |
-| `#8b5cf6` violet | ~3.9:1 | ✗ |
+| Preset           | White-on-color | AA (4.5:1)? |
+| ---------------- | -------------- | ----------- |
+| `#eab308` yellow | ~1.6:1         | ✗ (severe)  |
+| `#22c55e` green  | ~2.0:1         | ✗ (severe)  |
+| `#14b8a6` teal   | ~2.3:1         | ✗           |
+| `#f97316` orange | ~2.3:1         | ✗           |
+| `#ec4899` pink   | ~3.0:1         | ✗           |
+| `#3b82f6` blue   | ~3.3:1         | ✗           |
+| `#ef4444` red    | ~3.4:1         | ✗           |
+| `#8b5cf6` violet | ~3.9:1         | ✗           |
 
 **Every preset fails AA for the button label**, and yellow/green are close to
 illegible. This is a core interactive control, so it's High.

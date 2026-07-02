@@ -16,16 +16,40 @@ const ACCOUNTS = [
     email: "alice@test.com",
     name: "Alice",
     habits: [
-      { name: "Drink Water", description: "Aim for 8 glasses a day.", color: "#3b82f6", targetDays: EVERY_DAY, tags: ["Health"] },
-      { name: "Read 20 Minutes", description: "Fiction or non-fiction.", color: "#22c55e", targetDays: WEEKDAYS, tags: ["Learning"] },
+      {
+        name: "Drink Water",
+        description: "Aim for 8 glasses a day.",
+        color: "#3b82f6",
+        targetDays: EVERY_DAY,
+        tags: ["Health"],
+      },
+      {
+        name: "Read 20 Minutes",
+        description: "Fiction or non-fiction.",
+        color: "#22c55e",
+        targetDays: WEEKDAYS,
+        tags: ["Learning"],
+      },
     ],
   },
   {
     email: "bob@test.com",
     name: "Bob",
     habits: [
-      { name: "Morning Run", description: "At least 2 km before breakfast.", color: "#f97316", targetDays: MON_WED_FRI, tags: ["Fitness", "Health"] },
-      { name: "Meditate", description: "Ten minutes of calm.", color: "#8b5cf6", targetDays: EVERY_DAY, tags: ["Mindfulness", "Health"] },
+      {
+        name: "Morning Run",
+        description: "At least 2 km before breakfast.",
+        color: "#f97316",
+        targetDays: MON_WED_FRI,
+        tags: ["Fitness", "Health"],
+      },
+      {
+        name: "Meditate",
+        description: "Ten minutes of calm.",
+        color: "#8b5cf6",
+        targetDays: EVERY_DAY,
+        tags: ["Mindfulness", "Health"],
+      },
     ],
   },
 ];
@@ -81,7 +105,9 @@ async function main() {
   console.log(
     `Seeded ${users} users, ${habits} habits, ${tags} tags, and ${checkIns} check-ins.`,
   );
-  console.log(`Test accounts: alice@test.com, bob@test.com — password: ${PASSWORD}`);
+  console.log(
+    `Test accounts: alice@test.com, bob@test.com — password: ${PASSWORD}`,
+  );
 }
 
 main()
