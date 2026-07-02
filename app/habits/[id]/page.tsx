@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CalendarMonth } from "@/components/features/CalendarMonth";
 import { prisma } from "@/lib/prisma";
+import { requireUserId } from "@/lib/auth";
 import {
   addMonths,
   currentMonth,
@@ -25,7 +26,9 @@ export default async function HabitDetailPage({
   const { id } = await params;
   const { month: monthParam } = await searchParams;
 
-  const habit = await prisma.habit.findUnique({ where: { id } });
+  const userId = await requireUserId();
+  // Scope by userId so another user's habit id is unreachable (renders 404).
+  const habit = await prisma.habit.findFirst({ where: { id, userId } });
   if (!habit) {
     notFound();
   }

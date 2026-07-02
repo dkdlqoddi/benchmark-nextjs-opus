@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { requireUserId } from "@/lib/auth";
 import { computeStats, weeklyCompletionRates } from "@/lib/streak";
 import { getTodayKey } from "@/lib/date";
 import { WeeklyCompletionChart } from "@/components/features/WeeklyCompletionChart";
@@ -7,10 +8,11 @@ import { WeeklyCompletionChart } from "@/components/features/WeeklyCompletionCha
 // Read live database state on every request instead of prerendering at build time.
 export const dynamic = "force-dynamic";
 
-/** Stats page: weekly completion-rate chart + per-habit streaks/totals. */
+/** Stats page: the current user's weekly completion-rate chart + per-habit streaks. */
 export default async function StatsPage() {
+  const userId = await requireUserId();
   const habits = await prisma.habit.findMany({
-    where: { archivedAt: null },
+    where: { userId, archivedAt: null },
     orderBy: { createdAt: "asc" },
   });
   const checkIns = await prisma.checkIn.findMany({

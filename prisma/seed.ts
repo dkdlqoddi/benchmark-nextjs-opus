@@ -1,49 +1,70 @@
 import { PrismaClient } from "@prisma/client";
+import { hash } from "bcryptjs";
 import { getTodayKey, shiftKey } from "../lib/date";
 
 const prisma = new PrismaClient();
 
-const SEED_HABITS = [
+const PASSWORD = "password123";
+
+const ACCOUNTS = [
   {
-    name: "Drink Water",
-    description: "Aim for 8 glasses a day.",
-    color: "#3b82f6",
+    email: "alice@test.com",
+    name: "Alice",
+    habits: [
+      { name: "Drink Water", description: "Aim for 8 glasses a day.", color: "#3b82f6" },
+      { name: "Read 20 Minutes", description: "Fiction or non-fiction.", color: "#22c55e" },
+    ],
   },
   {
-    name: "Read 20 Minutes",
-    description: "Fiction or non-fiction.",
-    color: "#22c55e",
-  },
-  {
-    name: "Morning Run",
-    description: "At least 2 km before breakfast.",
-    color: "#f97316",
+    email: "bob@test.com",
+    name: "Bob",
+    habits: [
+      { name: "Morning Run", description: "At least 2 km before breakfast.", color: "#f97316" },
+      { name: "Meditate", description: "Ten minutes of calm.", color: "#8b5cf6" },
+    ],
   },
 ];
 
-/** Seeds three habits, each with random check-ins across the last 14 days (Asia/Seoul). */
+/** Seeds two test users, each with their own habits and ~2 weeks of check-ins. */
 async function main() {
-  // Make the seed idempotent.
+  // Idempotent: clear check-ins and habits, then users (order avoids FK issues).
   await prisma.checkIn.deleteMany();
   await prisma.habit.deleteMany();
+  await prisma.user.deleteMany();
 
   const today = getTodayKey();
-  for (const data of SEED_HABITS) {
-    const habit = await prisma.habit.create({ data });
+  const passwordHash = await hash(PASSWORD, 10);
 
-    for (let daysAgo = 0; daysAgo < 14; daysAgo++) {
-      // ~55% chance of a check-in on each of the last 14 days.
-      if (Math.random() < 0.55) {
-        await prisma.checkIn.create({
-          data: { habitId: habit.id, date: shiftKey(today, -daysAgo) },
-        });
+  for (const account of ACCOUNTS) {
+    const user = await prisma.user.create({
+      data: {
+        email: account.email,
+        name: account.name,
+        passwordHash,
+      },
+    });
+
+    for (const habitData of account.habits) {
+      const habit = await prisma.habit.create({
+        data: { ...habitData, userId: user.id },
+      });
+
+      for (let daysAgo = 0; daysAgo < 14; daysAgo++) {
+        // ~55% chance of a check-in on each of the last 14 days.
+        if (Math.random() < 0.55) {
+          await prisma.checkIn.create({
+            data: { habitId: habit.id, date: shiftKey(today, -daysAgo) },
+          });
+        }
       }
     }
   }
 
+  const users = await prisma.user.count();
   const habits = await prisma.habit.count();
   const checkIns = await prisma.checkIn.count();
-  console.log(`Seeded ${habits} habits and ${checkIns} check-ins.`);
+  console.log(`Seeded ${users} users, ${habits} habits, and ${checkIns} check-ins.`);
+  console.log(`Test accounts: alice@test.com, bob@test.com — password: ${PASSWORD}`);
 }
 
 main()

@@ -4,7 +4,8 @@
 // Note: SQLite does not enforce string length limits. The data-model
 // constraints (Habit.name 1-50 chars, Habit.description <= 200 chars, and
 // color as a #RRGGBB hex string) are enforced in the Server Actions layer
-// (see actions/habits.ts).
+// (see actions/habits.ts). Passwords are stored only as bcrypt hashes; all
+// per-user data access is scoped by Habit.userId (see lib/auth.ts + actions).
 
 generator client {
   provider = "prisma-client-js"
@@ -15,14 +16,27 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  passwordHash String
+  createdAt    DateTime @default(now())
+  habits       Habit[]
+}
+
 model Habit {
   id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   name        String
   description String?
   color       String
   createdAt   DateTime  @default(now())
   archivedAt  DateTime?
   checkIns    CheckIn[]
+
+  @@index([userId])
 }
 
 model CheckIn {

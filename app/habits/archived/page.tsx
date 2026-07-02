@@ -2,14 +2,16 @@ import Link from "next/link";
 import { restoreHabit } from "@/actions/habits";
 import { DeleteHabitButton } from "@/components/features/DeleteHabitButton";
 import { prisma } from "@/lib/prisma";
+import { requireUserId } from "@/lib/auth";
 
 // Read live database state on every request instead of prerendering at build time.
 export const dynamic = "force-dynamic";
 
-/** Archived habits list with restore and permanent-delete actions. */
+/** Archived habits list (current user's) with restore and permanent-delete actions. */
 export default async function ArchivedHabitsPage() {
+  const userId = await requireUserId();
   const habits = await prisma.habit.findMany({
-    where: { archivedAt: { not: null } },
+    where: { userId, archivedAt: { not: null } },
     orderBy: { archivedAt: "desc" },
   });
 

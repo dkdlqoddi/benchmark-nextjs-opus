@@ -1,15 +1,17 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { requireUserId } from "@/lib/auth";
 import { HabitCard } from "@/components/features/HabitCard";
 import { getTodayKey } from "@/lib/date";
 
 // Read live database state on every request instead of prerendering at build time.
 export const dynamic = "force-dynamic";
 
-/** Home page: renders all active (non-archived) habits as a grid of cards. */
+/** Home page: renders the current user's active (non-archived) habits as cards. */
 export default async function HomePage() {
+  const userId = await requireUserId();
   const habits = await prisma.habit.findMany({
-    where: { archivedAt: null },
+    where: { userId, archivedAt: null },
     orderBy: { createdAt: "asc" },
   });
 

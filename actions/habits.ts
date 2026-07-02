@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import type { ZodError } from "zod";
 import { prisma } from "@/lib/prisma";
+import { requireUserId, assertHabitOwner } from "@/lib/auth";
 import { habitSchema, type HabitFormState } from "@/lib/habit-schema";
 
 /** Reads and trims the habit form fields from FormData. */
@@ -32,6 +33,7 @@ export async function createHabit(
   _prev: HabitFormState,
   formData: FormData,
 ): Promise<HabitFormState> {
+  const userId = await requireUserId();
   const values = readForm(formData);
   const parsed = habitSchema.safeParse(values);
   if (!parsed.success) {
@@ -40,6 +42,7 @@ export async function createHabit(
 
   await prisma.habit.create({
     data: {
+      userId,
       name: parsed.data.name,
       description: parsed.data.description || null,
       color: parsed.data.color,
@@ -56,12 +59,14 @@ export async function updateHabit(
   _prev: HabitFormState,
   formData: FormData,
 ): Promise<HabitFormState> {
+  const userId = await requireUserId();
   const values = readForm(formData);
   const parsed = habitSchema.safeParse(values);
   if (!parsed.success) {
     return { errors: toFieldErrors(parsed.error), values };
   }
 
+  await assertHabitOwner(id, userId);
   await prisma.habit.update({
     where: { id },
     data: {
@@ -77,6 +82,8 @@ export async function updateHabit(
 
 /** Archives a habit (sets archivedAt) so it is hidden from the home list. */
 export async function archiveHabit(id: string) {
+  const userId = await requireUserId();
+  await assertHabitOwner(id, userId);
   await prisma.habit.update({
     where: { id },
     data: { archivedAt: new Date() },
@@ -87,6 +94,8 @@ export async function archiveHabit(id: string) {
 
 /** Restores an archived habit by clearing archivedAt. */
 export async function restoreHabit(id: string) {
+  const userId = await requireUserId();
+  await assertHabitOwner(id, userId);
   await prisma.habit.update({
     where: { id },
     data: { archivedAt: null },
@@ -100,6 +109,8 @@ export async function restoreHabit(id: string) {
  * Uses a transaction so the check-ins are always removed with the habit.
  */
 export async function deleteHabit(id: string) {
+  const userId = await requireUserId();
+  await assertHabitOwner(id, userId);
   await prisma.$transaction([
     prisma.checkIn.deleteMany({ where: { habitId: id } }),
     prisma.habit.delete({ where: { id } }),

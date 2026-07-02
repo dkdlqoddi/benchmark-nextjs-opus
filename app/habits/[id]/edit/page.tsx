@@ -2,15 +2,18 @@ import { notFound } from "next/navigation";
 import { updateHabit } from "@/actions/habits";
 import { HabitForm } from "@/components/features/HabitForm";
 import { prisma } from "@/lib/prisma";
+import { requireUserId } from "@/lib/auth";
 
-/** Edit habit page: loads a habit and renders the shared form wired to update. */
+/** Edit habit page: loads the user's own habit and wires the shared form to update. */
 export default async function EditHabitPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const habit = await prisma.habit.findUnique({ where: { id } });
+  const userId = await requireUserId();
+  // Scope by userId so another user's habit id is unreachable (renders 404).
+  const habit = await prisma.habit.findFirst({ where: { id, userId } });
   if (!habit) {
     notFound();
   }
