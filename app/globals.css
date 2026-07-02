@@ -1,1 +1,7 @@
 @import "tailwindcss";
+
+/* Class-based dark mode: `dark:` utilities apply when an ancestor (the <html>
+   element, toggled by next-themes) has the `dark` class, instead of only
+   following the OS `prefers-color-scheme`. System preference is still honored
+   via next-themes' default "system" theme. */
+@custom-variant dark (&:where(.dark, .dark *));
