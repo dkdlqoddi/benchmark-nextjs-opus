@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { CalendarMonth } from "@/components/features/CalendarMonth";
 import { prisma } from "@/lib/prisma";
 import { requireUserId } from "@/lib/auth";
+import { describeMask } from "@/lib/target-days";
 import {
   addMonths,
   currentMonth,
@@ -68,7 +69,8 @@ export default async function HabitDetailPage({
             </p>
           ) : null}
           <p className="mt-1 text-xs text-neutral-500">
-            {totalCheckIns} total check-in{totalCheckIns === 1 ? "" : "s"}
+            {describeMask(habit.targetDays)} · {totalCheckIns} total check-in
+            {totalCheckIns === 1 ? "" : "s"}
             {habit.archivedAt ? " · archived" : ""}
           </p>
         </div>
@@ -100,6 +102,7 @@ export default async function HabitDetailPage({
           month={month}
           checkedKeys={checkIns.map((c) => c.date)}
           todayKey={getTodayKey()}
+          targetDays={habit.targetDays}
         />
       </div>
     </section>

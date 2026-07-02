@@ -2,7 +2,8 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireUserId } from "@/lib/auth";
 import { HabitCard } from "@/components/features/HabitCard";
-import { getTodayKey } from "@/lib/date";
+import { getTodayKey, weekdayOfKey } from "@/lib/date";
+import { isTargetWeekday } from "@/lib/target-days";
 
 // Read live database state on every request instead of prerendering at build time.
 export const dynamic = "force-dynamic";
@@ -16,6 +17,7 @@ export default async function HomePage() {
   });
 
   const todayKey = getTodayKey();
+  const todayWeekday = weekdayOfKey(todayKey);
   const todaysCheckIns = await prisma.checkIn.findMany({
     where: { date: todayKey, habitId: { in: habits.map((h) => h.id) } },
     select: { habitId: true },
@@ -65,6 +67,7 @@ export default async function HomePage() {
               <HabitCard
                 habit={habit}
                 checkedToday={checkedToday.has(habit.id)}
+                isTargetToday={isTargetWeekday(habit.targetDays, todayWeekday)}
               />
             </li>
           ))}

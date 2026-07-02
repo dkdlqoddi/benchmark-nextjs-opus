@@ -2,11 +2,20 @@ import Link from "next/link";
 import type { Habit } from "@prisma/client";
 import { archiveHabit } from "@/actions/habits";
 import { toggleToday } from "@/actions/check-ins";
+import { describeMask } from "@/lib/target-days";
 
-type HabitCardProps = { habit: Habit; checkedToday: boolean };
+type HabitCardProps = {
+  habit: Habit;
+  checkedToday: boolean;
+  isTargetToday: boolean;
+};
 
 /** Habit card with a check-in-today toggle plus links to detail, edit, and archive. */
-export function HabitCard({ habit, checkedToday }: HabitCardProps) {
+export function HabitCard({
+  habit,
+  checkedToday,
+  isTargetToday,
+}: HabitCardProps) {
   return (
     <article className="flex flex-col gap-3 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900">
       <div className="flex gap-3">
@@ -28,6 +37,10 @@ export function HabitCard({ habit, checkedToday }: HabitCardProps) {
               {habit.description}
             </p>
           ) : null}
+          <p className="mt-1 text-xs text-neutral-500">
+            {describeMask(habit.targetDays)}
+            {isTargetToday ? "" : " · off day today"}
+          </p>
         </div>
       </div>
 
@@ -35,11 +48,12 @@ export function HabitCard({ habit, checkedToday }: HabitCardProps) {
         <button
           type="submit"
           aria-pressed={checkedToday}
+          title={isTargetToday ? undefined : "Not a target day today"}
           className={`w-full rounded-md border px-3 py-2 text-sm font-medium transition ${
             checkedToday
               ? "border-transparent text-white"
               : "border-neutral-300 text-neutral-700 hover:bg-neutral-100 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-800"
-          }`}
+          } ${!isTargetToday && !checkedToday ? "opacity-50" : ""}`}
           style={checkedToday ? { backgroundColor: habit.color } : undefined}
         >
           {checkedToday ? "✓ Checked in today" : "Check in today"}

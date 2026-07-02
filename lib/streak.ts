@@ -1,9 +1,15 @@
-import { shiftKey } from "./date";
+import { shiftKey, weekdayOfKey } from "./date";
+import { EVERY_DAY, isTargetWeekday } from "./target-days";
 
 /**
  * Streak statistics for a habit. Pure functions only — all "today" context is
  * passed in as a YYYY-MM-DD key so results are deterministic and testable.
  * Inputs are check-in date keys (YYYY-MM-DD) and are assumed to be duplicate-free.
+ *
+ * Streaks count only a habit's target days (a 7-bit weekday mask; see
+ * lib/target-days.ts). A run steps day-to-day over target days, skipping
+ * non-target weekdays; check-ins that land on non-target days never extend a
+ * streak, and missing a target day breaks it.
  */
 
 export type HabitStats = {
@@ -12,17 +18,39 @@ export type HabitStats = {
   total: number;
 };
 
-/** Longest run of consecutive dates among the check-in keys. Pure. */
-export function longestStreak(dates: string[]): number {
-  const set = new Set(dates);
+/** The nearest target day strictly before `key` for the given mask. */
+function prevTargetKey(key: string, mask: number): string {
+  let cursor = shiftKey(key, -1);
+  while (!isTargetWeekday(mask, weekdayOfKey(cursor))) {
+    cursor = shiftKey(cursor, -1);
+  }
+  return cursor;
+}
+
+/** The nearest target day strictly after `key` for the given mask. */
+function nextTargetKey(key: string, mask: number): string {
+  let cursor = shiftKey(key, 1);
+  while (!isTargetWeekday(mask, weekdayOfKey(cursor))) {
+    cursor = shiftKey(cursor, 1);
+  }
+  return cursor;
+}
+
+/** Longest run of consecutive target days that are all checked in. Pure. */
+export function longestStreak(dates: string[], mask: number): number {
+  if ((mask & EVERY_DAY) === 0) return 0;
+  // Only check-ins that fall on a target day can be part of a streak.
+  const set = new Set(
+    dates.filter((date) => isTargetWeekday(mask, weekdayOfKey(date))),
+  );
   let longest = 0;
   for (const date of set) {
-    // Only begin counting from the first day of a run.
-    if (set.has(shiftKey(date, -1))) continue;
+    // Only begin counting from the first target day of a run.
+    if (set.has(prevTargetKey(date, mask))) continue;
     let length = 1;
     let cursor = date;
-    while (set.has(shiftKey(cursor, 1))) {
-      cursor = shiftKey(cursor, 1);
+    while (set.has(nextTargetKey(cursor, mask))) {
+      cursor = nextTargetKey(cursor, mask);
       length++;
     }
     if (length > longest) longest = length;
@@ -31,36 +59,50 @@ export function longestStreak(dates: string[]): number {
 }
 
 /**
- * Current streak relative to `today`: the run of consecutive check-ins ending at
- * today, or ending at yesterday when today has no check-in yet. Returns 0 when
- * neither today nor yesterday is checked in. Pure.
+ * Current streak relative to `today`, counting only target days: the run of
+ * consecutive checked target days ending at the most recent target day on or
+ * before today. If today is itself a target day that has not been checked yet,
+ * the run may end at the previous target day (today is still "open"). Returns 0
+ * when the most recent relevant target day is not checked. Pure.
  */
-export function currentStreak(dates: string[], today: string): number {
+export function currentStreak(
+  dates: string[],
+  today: string,
+  mask: number,
+): number {
+  if ((mask & EVERY_DAY) === 0) return 0;
   const set = new Set(dates);
 
-  let anchor: string;
-  if (set.has(today)) {
-    anchor = today;
-  } else if (set.has(shiftKey(today, -1))) {
-    anchor = shiftKey(today, -1);
-  } else {
-    return 0;
+  // Anchor at the most recent target day on or before today.
+  let anchor = isTargetWeekday(mask, weekdayOfKey(today))
+    ? today
+    : prevTargetKey(today, mask);
+  if (!set.has(anchor)) {
+    // If today itself is an as-yet-unchecked target day, fall back to the
+    // previous target day (today is still open); otherwise the streak is broken.
+    if (anchor !== today) return 0;
+    anchor = prevTargetKey(today, mask);
+    if (!set.has(anchor)) return 0;
   }
 
   let length = 0;
   let cursor = anchor;
   while (set.has(cursor)) {
     length++;
-    cursor = shiftKey(cursor, -1);
+    cursor = prevTargetKey(cursor, mask);
   }
   return length;
 }
 
 /** Current streak, longest streak, and total check-ins for a habit. Pure. */
-export function computeStats(dates: string[], today: string): HabitStats {
+export function computeStats(
+  dates: string[],
+  today: string,
+  mask: number,
+): HabitStats {
   return {
-    current: currentStreak(dates, today),
-    longest: longestStreak(dates),
+    current: currentStreak(dates, today, mask),
+    longest: longestStreak(dates, mask),
     total: dates.length,
   };
 }

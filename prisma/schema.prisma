@@ -32,6 +32,9 @@ model Habit {
   name        String
   description String?
   color       String
+  // Target weekdays as a 7-bit mask (bit i = weekday i, 0=Sun..6=Sat).
+  // 127 = every day; existing habits default to every day. See lib/target-days.ts.
+  targetDays  Int       @default(127)
   createdAt   DateTime  @default(now())
   archivedAt  DateTime?
   checkIns    CheckIn[]

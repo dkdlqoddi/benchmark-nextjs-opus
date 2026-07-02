@@ -13,6 +13,7 @@ function readForm(formData: FormData) {
     name: String(formData.get("name") ?? "").trim(),
     description: String(formData.get("description") ?? "").trim(),
     color: String(formData.get("color") ?? "").trim(),
+    targetDays: Number(formData.get("targetDays") ?? ""),
   };
 }
 
@@ -21,7 +22,12 @@ function toFieldErrors(error: ZodError): NonNullable<HabitFormState["errors"]> {
   const errors: NonNullable<HabitFormState["errors"]> = {};
   for (const issue of error.issues) {
     const key = issue.path[0];
-    if (key === "name" || key === "description" || key === "color") {
+    if (
+      key === "name" ||
+      key === "description" ||
+      key === "color" ||
+      key === "targetDays"
+    ) {
       if (!errors[key]) errors[key] = issue.message;
     }
   }
@@ -46,6 +52,7 @@ export async function createHabit(
       name: parsed.data.name,
       description: parsed.data.description || null,
       color: parsed.data.color,
+      targetDays: parsed.data.targetDays,
     },
   });
 
@@ -73,6 +80,7 @@ export async function updateHabit(
       name: parsed.data.name,
       description: parsed.data.description || null,
       color: parsed.data.color,
+      targetDays: parsed.data.targetDays,
     },
   });
 

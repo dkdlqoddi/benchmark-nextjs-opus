@@ -92,6 +92,12 @@ export function weekdayOf(year: number, month: number, day: number): number {
   return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
 }
 
+/** Weekday index (0=Sunday .. 6=Saturday) of a YYYY-MM-DD key. */
+export function weekdayOfKey(key: string): number {
+  const [year, month, day] = key.split("-").map(Number);
+  return weekdayOf(year, month, day);
+}
+
 /** Shifts a YYYY-MM-DD key by a number of days (may be negative). */
 export function shiftKey(key: string, deltaDays: number): string {
   const [year, month, day] = key.split("-").map(Number);

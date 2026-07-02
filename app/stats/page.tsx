@@ -89,6 +89,7 @@ export default async function StatsPage() {
                   const stats = computeStats(
                     datesByHabit.get(habit.id) ?? [],
                     today,
+                    habit.targetDays,
                   );
                   return (
                     <tr

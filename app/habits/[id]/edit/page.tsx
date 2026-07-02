@@ -30,6 +30,7 @@ export default async function EditHabitPage({
           name: habit.name,
           description: habit.description ?? "",
           color: habit.color,
+          targetDays: habit.targetDays,
         }}
       />
     </section>

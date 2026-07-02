@@ -1,26 +1,31 @@
 import { PrismaClient } from "@prisma/client";
 import { hash } from "bcryptjs";
 import { getTodayKey, shiftKey } from "../lib/date";
+import { EVERY_DAY, weekdaysToMask } from "../lib/target-days";
 
 const prisma = new PrismaClient();
 
 const PASSWORD = "password123";
+
+// Weekday indices: 0=Sun .. 6=Sat.
+const WEEKDAYS = weekdaysToMask([1, 2, 3, 4, 5]); // Mon–Fri
+const MON_WED_FRI = weekdaysToMask([1, 3, 5]);
 
 const ACCOUNTS = [
   {
     email: "alice@test.com",
     name: "Alice",
     habits: [
-      { name: "Drink Water", description: "Aim for 8 glasses a day.", color: "#3b82f6" },
-      { name: "Read 20 Minutes", description: "Fiction or non-fiction.", color: "#22c55e" },
+      { name: "Drink Water", description: "Aim for 8 glasses a day.", color: "#3b82f6", targetDays: EVERY_DAY },
+      { name: "Read 20 Minutes", description: "Fiction or non-fiction.", color: "#22c55e", targetDays: WEEKDAYS },
     ],
   },
   {
     email: "bob@test.com",
     name: "Bob",
     habits: [
-      { name: "Morning Run", description: "At least 2 km before breakfast.", color: "#f97316" },
-      { name: "Meditate", description: "Ten minutes of calm.", color: "#8b5cf6" },
+      { name: "Morning Run", description: "At least 2 km before breakfast.", color: "#f97316", targetDays: MON_WED_FRI },
+      { name: "Meditate", description: "Ten minutes of calm.", color: "#8b5cf6", targetDays: EVERY_DAY },
     ],
   },
 ];

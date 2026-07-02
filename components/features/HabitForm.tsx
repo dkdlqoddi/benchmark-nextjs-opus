@@ -1,19 +1,26 @@
 "use client";
-// Client Component: manages the color-preset picker state and renders inline
-// validation errors returned by the Server Action via useActionState.
+// Client Component: manages the color-preset and target-day picker state and
+// renders inline validation errors returned by the Server Action via useActionState.
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { HABIT_COLORS } from "@/lib/colors";
+import { WEEKDAY_LABELS } from "@/lib/date";
+import { EVERY_DAY, isTargetWeekday, toggleWeekday } from "@/lib/target-days";
 import type { HabitFormState } from "@/lib/habit-schema";
 
 type HabitFormProps = {
   action: (prev: HabitFormState, formData: FormData) => Promise<HabitFormState>;
-  initialValues?: { name: string; description: string; color: string };
+  initialValues?: {
+    name: string;
+    description: string;
+    color: string;
+    targetDays: number;
+  };
   submitLabel: string;
 };
 
-/** Shared create/edit habit form with an 8-color preset picker and inline errors. */
+/** Shared create/edit habit form with color, target-day pickers, and inline errors. */
 export function HabitForm({
   action,
   initialValues,
@@ -28,6 +35,7 @@ export function HabitForm({
     name: "",
     description: "",
     color: HABIT_COLORS[0],
+    targetDays: EVERY_DAY,
   };
   const initialColor = (HABIT_COLORS as readonly string[]).includes(
     initial.color,
@@ -35,6 +43,7 @@ export function HabitForm({
     ? initial.color
     : HABIT_COLORS[0];
   const [color, setColor] = useState(initialColor);
+  const [targetDays, setTargetDays] = useState(initial.targetDays);
 
   const inputClass =
     "rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 dark:border-neutral-700 dark:bg-neutral-900";
@@ -111,8 +120,39 @@ export function HabitForm({
             );
           })}
         </div>
-        {state.errors?.color ? (
-          <p className={errorClass}>{state.errors.color}</p>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <span className="text-sm font-medium">Target days</span>
+        <input type="hidden" name="targetDays" value={targetDays} />
+        <div className="flex flex-wrap gap-2">
+          {WEEKDAY_LABELS.map((label, weekday) => {
+            const selected = isTargetWeekday(targetDays, weekday);
+            return (
+              <button
+                key={label}
+                type="button"
+                onClick={() =>
+                  setTargetDays((mask) => toggleWeekday(mask, weekday))
+                }
+                aria-label={`${selected ? "Remove" : "Add"} ${label}`}
+                aria-pressed={selected}
+                className={`h-9 w-11 rounded-md border text-sm font-medium transition ${
+                  selected
+                    ? "border-transparent bg-blue-600 text-white hover:bg-blue-700"
+                    : "border-neutral-300 text-neutral-600 hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-xs text-neutral-500">
+          Streaks count only target days. You can still check in on other days.
+        </p>
+        {state.errors?.targetDays ? (
+          <p className={errorClass}>{state.errors.targetDays}</p>
         ) : null}
       </div>
 
