@@ -9,6 +9,7 @@
     "lint": "eslint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "verify:streak": "tsx scripts/verify-streak.ts",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
     "db:reset": "prisma migrate reset",
