@@ -16,16 +16,16 @@ const ACCOUNTS = [
     email: "alice@test.com",
     name: "Alice",
     habits: [
-      { name: "Drink Water", description: "Aim for 8 glasses a day.", color: "#3b82f6", targetDays: EVERY_DAY },
-      { name: "Read 20 Minutes", description: "Fiction or non-fiction.", color: "#22c55e", targetDays: WEEKDAYS },
+      { name: "Drink Water", description: "Aim for 8 glasses a day.", color: "#3b82f6", targetDays: EVERY_DAY, tags: ["Health"] },
+      { name: "Read 20 Minutes", description: "Fiction or non-fiction.", color: "#22c55e", targetDays: WEEKDAYS, tags: ["Learning"] },
     ],
   },
   {
     email: "bob@test.com",
     name: "Bob",
     habits: [
-      { name: "Morning Run", description: "At least 2 km before breakfast.", color: "#f97316", targetDays: MON_WED_FRI },
-      { name: "Meditate", description: "Ten minutes of calm.", color: "#8b5cf6", targetDays: EVERY_DAY },
+      { name: "Morning Run", description: "At least 2 km before breakfast.", color: "#f97316", targetDays: MON_WED_FRI, tags: ["Fitness", "Health"] },
+      { name: "Meditate", description: "Ten minutes of calm.", color: "#8b5cf6", targetDays: EVERY_DAY, tags: ["Mindfulness", "Health"] },
     ],
   },
 ];
@@ -49,9 +49,18 @@ async function main() {
       },
     });
 
-    for (const habitData of account.habits) {
+    for (const { tags, ...fields } of account.habits) {
       const habit = await prisma.habit.create({
-        data: { ...habitData, userId: user.id },
+        data: {
+          ...fields,
+          userId: user.id,
+          tags: {
+            connectOrCreate: tags.map((name) => ({
+              where: { userId_name: { userId: user.id, name } },
+              create: { userId: user.id, name },
+            })),
+          },
+        },
       });
 
       for (let daysAgo = 0; daysAgo < 14; daysAgo++) {
@@ -67,8 +76,11 @@ async function main() {
 
   const users = await prisma.user.count();
   const habits = await prisma.habit.count();
+  const tags = await prisma.tag.count();
   const checkIns = await prisma.checkIn.count();
-  console.log(`Seeded ${users} users, ${habits} habits, and ${checkIns} check-ins.`);
+  console.log(
+    `Seeded ${users} users, ${habits} habits, ${tags} tags, and ${checkIns} check-ins.`,
+  );
   console.log(`Test accounts: alice@test.com, bob@test.com — password: ${PASSWORD}`);
 }
 

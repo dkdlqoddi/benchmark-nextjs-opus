@@ -29,7 +29,12 @@ export default async function HabitDetailPage({
 
   const userId = await requireUserId();
   // Scope by userId so another user's habit id is unreachable (renders 404).
-  const habit = await prisma.habit.findFirst({ where: { id, userId } });
+  const habit = await prisma.habit.findFirst({
+    where: { id, userId },
+    include: {
+      tags: { select: { id: true, name: true }, orderBy: { name: "asc" } },
+    },
+  });
   if (!habit) {
     notFound();
   }
@@ -73,6 +78,20 @@ export default async function HabitDetailPage({
             {totalCheckIns === 1 ? "" : "s"}
             {habit.archivedAt ? " · archived" : ""}
           </p>
+          {habit.tags.length > 0 ? (
+            <ul className="mt-2 flex flex-wrap gap-1.5">
+              {habit.tags.map((tag) => (
+                <li key={tag.id}>
+                  <Link
+                    href={`/?tag=${encodeURIComponent(tag.name)}`}
+                    className="inline-block rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+                  >
+                    {tag.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </div>
       </header>
 

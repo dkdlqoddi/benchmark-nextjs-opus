@@ -13,7 +13,10 @@ export default async function EditHabitPage({
   const { id } = await params;
   const userId = await requireUserId();
   // Scope by userId so another user's habit id is unreachable (renders 404).
-  const habit = await prisma.habit.findFirst({ where: { id, userId } });
+  const habit = await prisma.habit.findFirst({
+    where: { id, userId },
+    include: { tags: { select: { name: true }, orderBy: { name: "asc" } } },
+  });
   if (!habit) {
     notFound();
   }
@@ -31,6 +34,7 @@ export default async function EditHabitPage({
           description: habit.description ?? "",
           color: habit.color,
           targetDays: habit.targetDays,
+          tags: habit.tags.map((tag) => tag.name).join(", "),
         }}
       />
     </section>

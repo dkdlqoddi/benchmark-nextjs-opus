@@ -31,6 +31,8 @@ export type HabitFormValues = {
   description: string;
   color: string;
   targetDays: number;
+  // Raw comma-separated tag input; parsed/validated in actions/habits.ts.
+  tags: string;
 };
 
 /** Result returned by the create/edit form actions (errors + submitted values). */

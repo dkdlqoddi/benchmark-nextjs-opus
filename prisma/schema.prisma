@@ -23,6 +23,7 @@ model User {
   passwordHash String
   createdAt    DateTime @default(now())
   habits       Habit[]
+  tags         Tag[]
 }
 
 model Habit {
@@ -38,6 +39,7 @@ model Habit {
   createdAt   DateTime  @default(now())
   archivedAt  DateTime?
   checkIns    CheckIn[]
+  tags        Tag[]
 
   @@index([userId])
 }
@@ -51,4 +53,17 @@ model CheckIn {
 
   // A habit can only be checked in once per day.
   @@unique([habitId, date])
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  createdAt DateTime @default(now())
+  habits    Habit[]
+
+  // Tags are per-user; a user cannot have two tags with the same name.
+  @@unique([userId, name])
+  @@index([userId])
 }

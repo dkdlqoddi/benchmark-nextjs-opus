@@ -8,6 +8,7 @@ type HabitCardProps = {
   habit: Habit;
   checkedToday: boolean;
   isTargetToday: boolean;
+  tags: { id: string; name: string }[];
 };
 
 /** Habit card with a check-in-today toggle plus links to detail, edit, and archive. */
@@ -15,6 +16,7 @@ export function HabitCard({
   habit,
   checkedToday,
   isTargetToday,
+  tags,
 }: HabitCardProps) {
   return (
     <article className="flex flex-col gap-3 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900">
@@ -41,6 +43,20 @@ export function HabitCard({
             {describeMask(habit.targetDays)}
             {isTargetToday ? "" : " · off day today"}
           </p>
+          {tags.length > 0 ? (
+            <ul className="mt-2 flex flex-wrap gap-1.5">
+              {tags.map((tag) => (
+                <li key={tag.id}>
+                  <Link
+                    href={`/?tag=${encodeURIComponent(tag.name)}`}
+                    className="inline-block rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+                  >
+                    {tag.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </div>
       </div>
 

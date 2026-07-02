@@ -6,6 +6,7 @@ import type { ZodError } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireUserId, assertHabitOwner } from "@/lib/auth";
 import { habitSchema, type HabitFormState } from "@/lib/habit-schema";
+import { parseTags, validateTags } from "@/lib/tags";
 
 /** Reads and trims the habit form fields from FormData. */
 function readForm(formData: FormData) {
@@ -14,7 +15,26 @@ function readForm(formData: FormData) {
     description: String(formData.get("description") ?? "").trim(),
     color: String(formData.get("color") ?? "").trim(),
     targetDays: Number(formData.get("targetDays") ?? ""),
+    tags: String(formData.get("tags") ?? "").trim(),
   };
+}
+
+/** Upserts the given tag names for a user and returns their ids. */
+async function resolveTagIds(
+  userId: string,
+  names: string[],
+): Promise<string[]> {
+  const tags = await Promise.all(
+    names.map((name) =>
+      prisma.tag.upsert({
+        where: { userId_name: { userId, name } },
+        create: { userId, name },
+        update: {},
+        select: { id: true },
+      }),
+    ),
+  );
+  return tags.map((tag) => tag.id);
 }
 
 /** Maps a ZodError to a per-field error record for the form. */
@@ -42,10 +62,17 @@ export async function createHabit(
   const userId = await requireUserId();
   const values = readForm(formData);
   const parsed = habitSchema.safeParse(values);
-  if (!parsed.success) {
-    return { errors: toFieldErrors(parsed.error), values };
+  const tagNames = parseTags(values.tags);
+  const tagError = validateTags(tagNames);
+  if (!parsed.success || tagError) {
+    const errors: NonNullable<HabitFormState["errors"]> = parsed.success
+      ? {}
+      : toFieldErrors(parsed.error);
+    if (tagError) errors.tags = tagError;
+    return { errors, values };
   }
 
+  const tagIds = await resolveTagIds(userId, tagNames);
   await prisma.habit.create({
     data: {
       userId,
@@ -53,6 +80,7 @@ export async function createHabit(
       description: parsed.data.description || null,
       color: parsed.data.color,
       targetDays: parsed.data.targetDays,
+      tags: { connect: tagIds.map((id) => ({ id })) },
     },
   });
 
@@ -69,11 +97,18 @@ export async function updateHabit(
   const userId = await requireUserId();
   const values = readForm(formData);
   const parsed = habitSchema.safeParse(values);
-  if (!parsed.success) {
-    return { errors: toFieldErrors(parsed.error), values };
+  const tagNames = parseTags(values.tags);
+  const tagError = validateTags(tagNames);
+  if (!parsed.success || tagError) {
+    const errors: NonNullable<HabitFormState["errors"]> = parsed.success
+      ? {}
+      : toFieldErrors(parsed.error);
+    if (tagError) errors.tags = tagError;
+    return { errors, values };
   }
 
   await assertHabitOwner(id, userId);
+  const tagIds = await resolveTagIds(userId, tagNames);
   await prisma.habit.update({
     where: { id },
     data: {
@@ -81,6 +116,8 @@ export async function updateHabit(
       description: parsed.data.description || null,
       color: parsed.data.color,
       targetDays: parsed.data.targetDays,
+      // `set` replaces the habit's tags with exactly the submitted list.
+      tags: { set: tagIds.map((id) => ({ id })) },
     },
   });
 

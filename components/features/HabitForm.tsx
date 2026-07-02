@@ -16,6 +16,7 @@ type HabitFormProps = {
     description: string;
     color: string;
     targetDays: number;
+    tags: string;
   };
   submitLabel: string;
 };
@@ -36,6 +37,7 @@ export function HabitForm({
     description: "",
     color: HABIT_COLORS[0],
     targetDays: EVERY_DAY,
+    tags: "",
   };
   const initialColor = (HABIT_COLORS as readonly string[]).includes(
     initial.color,
@@ -153,6 +155,30 @@ export function HabitForm({
         </p>
         {state.errors?.targetDays ? (
           <p className={errorClass}>{state.errors.targetDays}</p>
+        ) : null}
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <label htmlFor="tags" className="text-sm font-medium">
+          Tags{" "}
+          <span className="font-normal text-neutral-500">
+            (comma-separated, optional)
+          </span>
+        </label>
+        <input
+          id="tags"
+          name="tags"
+          type="text"
+          defaultValue={state.values?.tags ?? initial.tags}
+          placeholder="e.g. Health, Morning"
+          aria-invalid={state.errors?.tags ? true : undefined}
+          aria-describedby={state.errors?.tags ? "tags-error" : undefined}
+          className={inputClass}
+        />
+        {state.errors?.tags ? (
+          <p id="tags-error" className={errorClass}>
+            {state.errors.tags}
+          </p>
         ) : null}
       </div>
 
