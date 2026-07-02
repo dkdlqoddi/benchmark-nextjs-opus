@@ -4,6 +4,15 @@ import { requireUserId } from "@/lib/auth";
 import { HabitCard } from "@/components/features/HabitCard";
 import { getTodayKey, weekdayOfKey } from "@/lib/date";
 import { isTargetWeekday } from "@/lib/target-days";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  // `app/page.tsx` shares the root segment with the layout that defines the title
+  // template, so the template doesn't apply here — set the full title explicitly.
+  title: { absolute: "Your Habits · HabitLog" },
+  description:
+    "All your active habits at a glance — search, filter by tag, and check in for today.",
+};
 
 // Read live database state on every request instead of prerendering at build time.
 export const dynamic = "force-dynamic";

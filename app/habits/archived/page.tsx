@@ -3,6 +3,12 @@ import { restoreHabit } from "@/actions/habits";
 import { DeleteHabitButton } from "@/components/features/DeleteHabitButton";
 import { prisma } from "@/lib/prisma";
 import { requireUserId } from "@/lib/auth";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Archived habits",
+  description: "Restore or permanently delete habits you've archived.",
+};
 
 // Read live database state on every request instead of prerendering at build time.
 export const dynamic = "force-dynamic";

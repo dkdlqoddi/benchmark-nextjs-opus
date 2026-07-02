@@ -1,5 +1,11 @@
 import { createHabit } from "@/actions/habits";
 import { HabitForm } from "@/components/features/HabitForm";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "New habit",
+  description: "Create a new habit with a color, target days, and tags.",
+};
 
 /** New habit page: renders the shared habit form wired to the create action. */
 export default function NewHabitPage() {

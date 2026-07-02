@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { loginAction } from "@/actions/auth";
 import { AuthForm } from "@/components/features/AuthForm";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Log in",
+  description: "Log in to your HabitLog account to track your habits.",
+};
 
 /** Login page: email + password sign-in. Reachable while logged out (see proxy.ts). */
 export default function LoginPage() {

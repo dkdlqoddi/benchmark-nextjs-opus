@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { signupAction } from "@/actions/auth";
 import { AuthForm } from "@/components/features/AuthForm";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Sign up",
+  description: "Create a HabitLog account and start building lasting streaks.",
+};
 
 /** Signup page: creates an account then logs in. Reachable while logged out. */
 export default function SignupPage() {

@@ -4,6 +4,13 @@ import { requireUserId } from "@/lib/auth";
 import { computeStats, weeklyCompletionRates } from "@/lib/streak";
 import { getTodayKey } from "@/lib/date";
 import { WeeklyCompletionChart } from "@/components/features/WeeklyCompletionChart";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Stats",
+  description:
+    "Your weekly completion rate and per-habit current, longest, and total streaks.",
+};
 
 // Read live database state on every request instead of prerendering at build time.
 export const dynamic = "force-dynamic";

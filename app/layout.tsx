@@ -5,7 +5,12 @@ import { ThemeProvider } from "@/components/ui/ThemeProvider";
 import { TopNav } from "@/components/ui/TopNav";
 
 export const metadata: Metadata = {
-  title: "HabitLog",
+  // `default` is used for routes without their own title; `template` frames a
+  // page's own title, e.g. "Stats" → "Stats · HabitLog".
+  title: {
+    default: "HabitLog — habit tracker",
+    template: "%s · HabitLog",
+  },
   description: "Track your daily habits and build lasting streaks.",
 };
 

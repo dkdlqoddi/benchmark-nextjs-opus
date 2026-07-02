@@ -2,8 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CalendarMonth } from "@/components/features/CalendarMonth";
 import { prisma } from "@/lib/prisma";
-import { requireUserId } from "@/lib/auth";
+import { auth, requireUserId } from "@/lib/auth";
+import { getOwnedHabit } from "@/lib/habits";
 import { describeMask } from "@/lib/target-days";
+import type { Metadata } from "next";
 import {
   addMonths,
   currentMonth,
@@ -15,6 +17,28 @@ import {
 
 // Read live database state on every request instead of prerendering at build time.
 export const dynamic = "force-dynamic";
+
+/**
+ * Title/description from the habit itself (owner-scoped). Shares its query with
+ * the page via the cached getOwnedHabit, so it adds no extra DB round-trip.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const session = await auth();
+  const userId = session?.user?.id;
+  if (!userId) return { title: "Habit" };
+  const habit = await getOwnedHabit(id, userId);
+  if (!habit) return { title: "Habit not found" };
+  return {
+    title: habit.name,
+    description:
+      habit.description ?? `Check-in calendar and streak for “${habit.name}”.`,
+  };
+}
 
 /** Habit detail page: a monthly check-in calendar with prev/next navigation. */
 export default async function HabitDetailPage({
@@ -29,12 +53,7 @@ export default async function HabitDetailPage({
 
   const userId = await requireUserId();
   // Scope by userId so another user's habit id is unreachable (renders 404).
-  const habit = await prisma.habit.findFirst({
-    where: { id, userId },
-    include: {
-      tags: { select: { id: true, name: true }, orderBy: { name: "asc" } },
-    },
-  });
+  const habit = await getOwnedHabit(id, userId);
   if (!habit) {
     notFound();
   }
