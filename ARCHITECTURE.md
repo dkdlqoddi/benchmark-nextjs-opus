@@ -143,7 +143,9 @@ prisma/
 ├── migrations/               # SQL migration history
 └── seed.ts                   # Idempotent sample-data seeder (run via tsx)
 
-scripts/verify-streak.ts      # Lightweight assertion harness for lib/streak
+tests/
+├── unit/                     # Vitest unit tests (streak, date, zod schemas)
+└── e2e/                      # Playwright E2E tests (+ global-setup, helpers)
 bench-reports/                # Per-task work reports (pNN.md)
 ```
 
@@ -342,8 +344,8 @@ depends on nothing in `app/` or `components/`.
   - `weeklyCompletionRates(dates, today, habitCount, weeks=8)` — completion
     percentage per 7-day window for the whole app.
 
-  This purity is what makes `scripts/verify-streak.ts` possible (it pins
-  `TODAY = "2026-07-02"` and asserts expected streak values).
+  This purity is what makes the `tests/unit/streak.test.ts` Vitest suite
+  possible (it pins a reference "today" and asserts expected streak values).
 
 - **`lib/colors.ts`** — `HABIT_COLORS`, the 8 preset hex swatches, and the derived
   `HabitColor` type. **Single source of truth** for both the picker UI
@@ -446,7 +448,8 @@ because SQLite ignores them.
 | `dev` / `build` / `start` | Next.js dev server / production build / serve build.        |
 | `lint`                    | ESLint (flat config: next core-web-vitals + TS + Prettier). |
 | `format` / `format:check` | Prettier write / check.                                     |
-| `verify:streak`           | Run the `lib/streak` assertion harness (`tsx`).             |
+| `test`                    | Run the Vitest unit suite once (`vitest run`).              |
+| `test:e2e`                | Run the Playwright E2E suite (headless).                    |
 | `db:migrate`              | `prisma migrate dev` — create/apply a migration.            |
 | `db:seed`                 | `prisma db seed` → `tsx prisma/seed.ts`.                    |
 | `db:reset`                | Drop, re-migrate, re-seed.                                  |
@@ -461,10 +464,14 @@ inserts 3 sample habits with random check-ins across the last 14 days, using
 `DATABASE_URL` in `.env` (`file:./dev.db`) contains no secrets and is committed
 for reproducibility.
 
-**Testing.** There is no test framework. `scripts/verify-streak.ts` is a small
-hand-rolled assertion script: it pins `TODAY`, runs `computeStats` over a table
-of cases, prints PASS/FAIL per case, and exits non-zero on any failure. It is
-possible precisely because `lib/streak` is pure.
+**Testing.** Two layers. **Vitest** unit tests (`tests/unit/`) cover the pure
+domain modules — `lib/streak` (streak/stat cases incl. year-boundary, leap-day,
+and target-day combinations), `lib/date` (Asia/Seoul timezone boundaries), and
+the Zod schemas (`habit`, `login`, `signup`) — run once with `npm run test`.
+**Playwright** E2E tests (`tests/e2e/`) drive a production build against a
+throwaway migrated SQLite database (provisioned in `global-setup`, never touching
+`dev.db`): the full signup → login → create-habit → check-in → stats flow, plus a
+per-user data-isolation check. Run headless with `npm run test:e2e`.
 
 **Quality gates** (run per task, per `CLAUDE.md`): `npm run build`,
 `npx tsc --noEmit`, and `npm run lint` must each report 0 errors.
@@ -494,7 +501,7 @@ A summary of the choices that shape the codebase, and the reasoning behind each:
 
 5. **Pure domain math in `lib/streak`.** Passing "today" in (never reading the
    clock) keeps streak/completion computations deterministic and testable — which
-   is what `verify:streak` exercises.
+   is what the `tests/unit/streak.test.ts` Vitest suite exercises.
 
 6. **Single sources of truth.** Habit colors (`lib/colors`) feed both the picker
    and validation; the Zod schema and form-state types (`lib/habit-schema`) are
