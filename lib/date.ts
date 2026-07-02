@@ -29,6 +29,25 @@ export function dateKey(year: number, month: number, day: number): string {
   return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
+const DATE_KEY_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * True when `key` is a real YYYY-MM-DD calendar date. Beyond matching the shape,
+ * it rejects impossible dates (e.g. "2026-13-40", or "2026-02-29" in a non-leap
+ * year) by requiring the parsed parts to round-trip, so a hand-crafted check-in
+ * request cannot store a nonsense date.
+ */
+export function isValidDateKey(key: string): boolean {
+  if (!DATE_KEY_RE.test(key)) return false;
+  const [year, month, day] = key.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() + 1 === month &&
+    date.getUTCDate() === day
+  );
+}
+
 /** Formats an instant as a YYYY-MM-DD key in Asia/Seoul. */
 export function toDateKey(instant: Date): string {
   const { year, month, day } = seoulParts(instant);

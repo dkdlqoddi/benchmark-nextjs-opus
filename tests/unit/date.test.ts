@@ -7,6 +7,7 @@ import {
   dateKey,
   daysInMonth,
   getTodayKey,
+  isValidDateKey,
   monthKey,
   monthLabel,
   parseMonthKey,
@@ -103,6 +104,28 @@ describe("dateKey formatting", () => {
   it("zero-pads month and day", () => {
     expect(dateKey(2026, 1, 5)).toBe("2026-01-05");
     expect(dateKey(2026, 12, 25)).toBe("2026-12-25");
+  });
+});
+
+describe("isValidDateKey", () => {
+  it("accepts real calendar dates, including a leap day", () => {
+    expect(isValidDateKey("2026-07-02")).toBe(true);
+    expect(isValidDateKey("2026-01-01")).toBe(true);
+    expect(isValidDateKey("2028-02-29")).toBe(true); // 2028 is a leap year
+  });
+
+  it("rejects malformed shapes", () => {
+    expect(isValidDateKey("2026-7-2")).toBe(false);
+    expect(isValidDateKey("2026/07/02")).toBe(false);
+    expect(isValidDateKey("not-a-date")).toBe(false);
+    expect(isValidDateKey("")).toBe(false);
+  });
+
+  it("rejects well-shaped but impossible dates", () => {
+    expect(isValidDateKey("2026-13-40")).toBe(false); // month/day out of range
+    expect(isValidDateKey("2026-00-10")).toBe(false); // month 0
+    expect(isValidDateKey("2026-02-30")).toBe(false); // Feb never has 30
+    expect(isValidDateKey("2027-02-29")).toBe(false); // 2027 is not a leap year
   });
 });
 

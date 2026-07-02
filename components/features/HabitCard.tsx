@@ -3,6 +3,7 @@ import type { Habit } from "@prisma/client";
 import { archiveHabit } from "@/actions/habits";
 import { toggleToday } from "@/actions/check-ins";
 import { describeMask } from "@/lib/target-days";
+import { readableOnColorClass } from "@/lib/colors";
 
 type HabitCardProps = {
   habit: Habit;
@@ -67,7 +68,7 @@ export function HabitCard({
           title={isTargetToday ? undefined : "Not a target day today"}
           className={`w-full rounded-md border px-3 py-2 text-sm font-medium transition ${
             checkedToday
-              ? "border-transparent text-white"
+              ? `border-transparent ${readableOnColorClass(habit.color)}`
               : "border-neutral-300 text-neutral-700 hover:bg-neutral-100 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-800"
           } ${!isTargetToday && !checkedToday ? "opacity-50" : ""}`}
           style={checkedToday ? { backgroundColor: habit.color } : undefined}

@@ -1,6 +1,7 @@
 import { toggleCheckIn } from "@/actions/check-ins";
 import { buildMonthGrid, WEEKDAY_LABELS, weekdayOfKey } from "@/lib/date";
 import { isTargetWeekday } from "@/lib/target-days";
+import { readableOnColorClass } from "@/lib/colors";
 
 type CalendarMonthProps = {
   habitId: string;
@@ -74,7 +75,7 @@ export function CalendarMonth({
                 title={isTarget ? undefined : "Not a target day"}
                 className={`flex aspect-square w-full items-center justify-center rounded-md border text-sm transition ${
                   isChecked
-                    ? "border-transparent font-semibold text-white"
+                    ? `border-transparent font-semibold ${readableOnColorClass(color)}`
                     : "border-neutral-200 text-neutral-700 hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
                 } ${isToday ? "ring-2 ring-inset ring-blue-500" : ""} ${
                   !isTarget && !isChecked ? "opacity-40" : ""

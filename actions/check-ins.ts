@@ -1,20 +1,19 @@
 "use server";
 
+import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUserId, assertHabitOwner } from "@/lib/auth";
-import { getTodayKey } from "@/lib/date";
-
-const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
+import { getTodayKey, isValidDateKey } from "@/lib/date";
 
 /**
  * Toggles a habit's check-in for a specific date (past or today only). Creates
- * the check-in if absent, removes it if present. Future dates are rejected, and
- * the habit must belong to the current user.
+ * the check-in if absent, removes it if present. Future/invalid dates are
+ * rejected, and the habit must belong to the current user.
  */
 export async function toggleCheckIn(habitId: string, dateKey: string) {
   const userId = await requireUserId();
-  if (!DATE_KEY.test(dateKey)) {
+  if (!isValidDateKey(dateKey)) {
     throw new Error("Invalid date.");
   }
   if (dateKey > getTodayKey()) {
@@ -26,7 +25,20 @@ export async function toggleCheckIn(habitId: string, dateKey: string) {
     where: { habitId, date: dateKey },
   });
   if (deleted.count === 0) {
-    await prisma.checkIn.create({ data: { habitId, date: dateKey } });
+    try {
+      await prisma.checkIn.create({ data: { habitId, date: dateKey } });
+    } catch (error) {
+      // A concurrent toggle (e.g. a double-click) can insert the same
+      // [habitId, date] between our deleteMany and create, tripping the unique
+      // constraint (P2002). The intended end state — checked in — already
+      // holds, so treat that specific collision as success, not a 500.
+      if (
+        !(error instanceof Prisma.PrismaClientKnownRequestError) ||
+        error.code !== "P2002"
+      ) {
+        throw error;
+      }
+    }
   }
 
   revalidatePath("/");
