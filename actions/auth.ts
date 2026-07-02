@@ -11,6 +11,25 @@ import {
   type AuthFormState,
 } from "@/lib/auth-schema";
 
+/**
+ * Attempts a credentials sign-in that redirects to `/` on success. Returns
+ * `false` only when the credentials are rejected (an `AuthError`); a successful
+ * sign-in throws a `NEXT_REDIRECT`, which is re-thrown so the redirect
+ * propagates to the framework.
+ */
+async function attemptCredentialsSignIn(
+  email: string,
+  password: string,
+): Promise<boolean> {
+  try {
+    await signIn("credentials", { email, password, redirectTo: "/" });
+    return true;
+  } catch (error) {
+    if (error instanceof AuthError) return false;
+    throw error;
+  }
+}
+
 /** Logs a user in from the login form; redirects home on success. */
 export async function loginAction(
   _prev: AuthFormState,
@@ -24,19 +43,12 @@ export async function loginAction(
     return { error: "Enter a valid email and password.", values: { email } };
   }
 
-  try {
-    await signIn("credentials", {
-      email: parsed.data.email,
-      password: parsed.data.password,
-      redirectTo: "/",
-    });
-  } catch (error) {
-    // A successful sign-in throws a NEXT_REDIRECT (re-thrown below); only a
-    // genuine auth failure is an AuthError.
-    if (error instanceof AuthError) {
-      return { error: "Invalid email or password.", values: { email } };
-    }
-    throw error;
+  const ok = await attemptCredentialsSignIn(
+    parsed.data.email,
+    parsed.data.password,
+  );
+  if (!ok) {
+    return { error: "Invalid email or password.", values: { email } };
   }
 
   return {};
@@ -73,18 +85,13 @@ export async function signupAction(
     data: { email: parsed.data.email, passwordHash },
   });
 
-  try {
-    await signIn("credentials", {
-      email: parsed.data.email,
-      password: parsed.data.password,
-      redirectTo: "/",
-    });
-  } catch (error) {
+  const ok = await attemptCredentialsSignIn(
+    parsed.data.email,
+    parsed.data.password,
+  );
+  if (!ok) {
     // Account was created; if auto-login somehow fails, send them to log in.
-    if (error instanceof AuthError) {
-      redirect("/login");
-    }
-    throw error;
+    redirect("/login");
   }
 
   return {};

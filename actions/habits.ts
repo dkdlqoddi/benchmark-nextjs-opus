@@ -2,22 +2,9 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import type { ZodError } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireUserId, assertHabitOwner } from "@/lib/auth";
-import { habitSchema, type HabitFormState } from "@/lib/habit-schema";
-import { parseTags, validateTags } from "@/lib/tags";
-
-/** Reads and trims the habit form fields from FormData. */
-function readForm(formData: FormData) {
-  return {
-    name: String(formData.get("name") ?? "").trim(),
-    description: String(formData.get("description") ?? "").trim(),
-    color: String(formData.get("color") ?? "").trim(),
-    targetDays: Number(formData.get("targetDays") ?? ""),
-    tags: String(formData.get("tags") ?? "").trim(),
-  };
-}
+import { requireUserId, assertHabitOwner, requireHabitOwner } from "@/lib/auth";
+import { parseHabitForm, type HabitFormState } from "@/lib/habit-schema";
 
 /** Upserts the given tag names for a user and returns their ids. */
 async function resolveTagIds(
@@ -37,49 +24,24 @@ async function resolveTagIds(
   return tags.map((tag) => tag.id);
 }
 
-/** Maps a ZodError to a per-field error record for the form. */
-function toFieldErrors(error: ZodError): NonNullable<HabitFormState["errors"]> {
-  const errors: NonNullable<HabitFormState["errors"]> = {};
-  for (const issue of error.issues) {
-    const key = issue.path[0];
-    if (
-      key === "name" ||
-      key === "description" ||
-      key === "color" ||
-      key === "targetDays"
-    ) {
-      if (!errors[key]) errors[key] = issue.message;
-    }
-  }
-  return errors;
-}
-
 /** Creates a habit from validated form data; redirects to home on success. */
 export async function createHabit(
   _prev: HabitFormState,
   formData: FormData,
 ): Promise<HabitFormState> {
   const userId = await requireUserId();
-  const values = readForm(formData);
-  const parsed = habitSchema.safeParse(values);
-  const tagNames = parseTags(values.tags);
-  const tagError = validateTags(tagNames);
-  if (!parsed.success || tagError) {
-    const errors: NonNullable<HabitFormState["errors"]> = parsed.success
-      ? {}
-      : toFieldErrors(parsed.error);
-    if (tagError) errors.tags = tagError;
-    return { errors, values };
-  }
+  const result = parseHabitForm(formData);
+  if (!result.ok) return result.state;
+  const { data, tagNames } = result.parsed;
 
   const tagIds = await resolveTagIds(userId, tagNames);
   await prisma.habit.create({
     data: {
       userId,
-      name: parsed.data.name,
-      description: parsed.data.description || null,
-      color: parsed.data.color,
-      targetDays: parsed.data.targetDays,
+      name: data.name,
+      description: data.description || null,
+      color: data.color,
+      targetDays: data.targetDays,
       tags: { connect: tagIds.map((id) => ({ id })) },
     },
   });
@@ -94,28 +56,22 @@ export async function updateHabit(
   _prev: HabitFormState,
   formData: FormData,
 ): Promise<HabitFormState> {
+  // Auth first, then validate, then ownership — preserves the original order so
+  // an invalid form returns field errors even for a habit the user doesn't own.
   const userId = await requireUserId();
-  const values = readForm(formData);
-  const parsed = habitSchema.safeParse(values);
-  const tagNames = parseTags(values.tags);
-  const tagError = validateTags(tagNames);
-  if (!parsed.success || tagError) {
-    const errors: NonNullable<HabitFormState["errors"]> = parsed.success
-      ? {}
-      : toFieldErrors(parsed.error);
-    if (tagError) errors.tags = tagError;
-    return { errors, values };
-  }
+  const result = parseHabitForm(formData);
+  if (!result.ok) return result.state;
+  const { data, tagNames } = result.parsed;
 
   await assertHabitOwner(id, userId);
   const tagIds = await resolveTagIds(userId, tagNames);
   await prisma.habit.update({
     where: { id },
     data: {
-      name: parsed.data.name,
-      description: parsed.data.description || null,
-      color: parsed.data.color,
-      targetDays: parsed.data.targetDays,
+      name: data.name,
+      description: data.description || null,
+      color: data.color,
+      targetDays: data.targetDays,
       // `set` replaces the habit's tags with exactly the submitted list.
       tags: { set: tagIds.map((id) => ({ id })) },
     },
@@ -127,8 +83,7 @@ export async function updateHabit(
 
 /** Archives a habit (sets archivedAt) so it is hidden from the home list. */
 export async function archiveHabit(id: string) {
-  const userId = await requireUserId();
-  await assertHabitOwner(id, userId);
+  await requireHabitOwner(id);
   await prisma.habit.update({
     where: { id },
     data: { archivedAt: new Date() },
@@ -139,8 +94,7 @@ export async function archiveHabit(id: string) {
 
 /** Restores an archived habit by clearing archivedAt. */
 export async function restoreHabit(id: string) {
-  const userId = await requireUserId();
-  await assertHabitOwner(id, userId);
+  await requireHabitOwner(id);
   await prisma.habit.update({
     where: { id },
     data: { archivedAt: null },
@@ -154,8 +108,7 @@ export async function restoreHabit(id: string) {
  * Uses a transaction so the check-ins are always removed with the habit.
  */
 export async function deleteHabit(id: string) {
-  const userId = await requireUserId();
-  await assertHabitOwner(id, userId);
+  await requireHabitOwner(id);
   await prisma.$transaction([
     prisma.checkIn.deleteMany({ where: { habitId: id } }),
     prisma.habit.delete({ where: { id } }),

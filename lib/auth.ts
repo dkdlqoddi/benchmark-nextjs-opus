@@ -73,3 +73,16 @@ export async function assertHabitOwner(
     throw new Error("Habit not found.");
   }
 }
+
+/**
+ * Resolves the current user and asserts they own `habitId`, returning the user
+ * id. Combines requireUserId + assertHabitOwner for mutations that act on a
+ * single habit with no other work between the two checks (archive/restore/
+ * delete). Actions that must validate input first (e.g. updateHabit) still call
+ * the two helpers separately to preserve check ordering.
+ */
+export async function requireHabitOwner(habitId: string): Promise<string> {
+  const userId = await requireUserId();
+  await assertHabitOwner(habitId, userId);
+  return userId;
+}
